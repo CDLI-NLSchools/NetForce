@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Net Force Skill Builder</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 540px;
+            width: 100%;
+            text-align: center;
+        }
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .correct { color: #2ecc71; }
+        .incorrect { color: #e74c3c; }
+        .warning { color: #f39c12; }
+        
+        canvas {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin: 10px 0;
+            width: 440px;
+            height: 280px;
+        }
+
+        .instruction-banner {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #d35400;
+            margin: 5px 0 15px 0;
+            background-color: #fdebd0;
+            padding: 8px 12px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .input-table {
+            width: 100%;
+            margin: 15px 0;
+            border-collapse: collapse;
+        }
+        .input-table td {
+            padding: 8px;
+            text-align: left;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        .input-table td:first-child {
+            width: 35%;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            font-size: 0.95rem;
+            text-align: center;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            box-sizing: border-box;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        button {
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+            flex: 1;
+        }
+
+        #submit-btn {
+            background-color: #3498db;
+            color: white;
+        }
+        #submit-btn:hover { background-color: #2980b9; }
+
+        #restart-btn {
+            background-color: #e67e22;
+            color: white;
+        }
+        #restart-btn:hover { background-color: #d35400; }
+
+        #feedback {
+            margin-top: 15px;
+            font-weight: bold;
+            min-height: 50px;
+            padding: 0 10px;
+            line-height: 1.5;
+        }
+
+        .ans-block {
+            font-size: 1rem;
+            margin-bottom: 4px;
+            color: #27ae60;
+        }
+
+        .continue-msg {
+            font-weight: bold;
+            font-size: 0.95rem;
+            color: #c0392b;
+            margin-top: 8px;
+        }
+
+        sub {
+            font-size: 0.75em;
+            line-height: 0;
+            vertical-align: baseline;
+            position: relative;
+            bottom: -0.2em;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Net Force Skill Builder</h2>
+    
+    <div class="score-board">
+        <span class="correct">Correct: <span id="correct-count">0</span></span>
+        <span class="incorrect">Incorrect: <span id="incorrect-count">0</span></span>
+    </div>
+
+    <canvas id="forceCanvas" width="440" height="280"></canvas>
+
+    <div id="instruction-banner" class="instruction-banner">
+        Enter all values including units and direction [Left] or [Right].
+    </div>
+
+    <table class="input-table">
+        <tr id="row-f1">
+            <td id="label-f1" style="color: #2980b9;">F<sub>1</sub>:</td>
+            <td id="cell-f1"></td>
+        </tr>
+        <tr id="row-f2">
+            <td id="label-f2" style="color: #8e44ad;">F<sub>2</sub>:</td>
+            <td id="cell-f2"></td>
+        </tr>
+        <tr id="row-f3">
+            <td id="label-f3" style="color: #e67e22;">F<sub>3</sub>:</td>
+            <td id="cell-f3"></td>
+        </tr>
+        <tr id="row-fnet">
+            <td id="label-fnet" style="color: #e74c3c;">F<sub>net</sub>:</td>
+            <td id="cell-fnet"></td>
+        </tr>
+    </table>
+
+    <div class="button-group">
+        <button id="submit-btn" onclick="checkAnswer()">Submit Answer</button>
+        <button id="restart-btn" onclick="resetQuiz()">Restart Quiz</button>
+    </div>
+
+    <div id="feedback"></div>
+</div>
+
+<script>
+    let scoreCorrect = 0;
+    let scoreIncorrect = 0;
+    let sessionUID = "";
+
+    // 0: Find F_net (given F1, F2, F3)
+    // 1: Find target force (given 2 forces and F_net)
+    let scenarioType = 0; 
+    let targetIndex = 0; // 0 for F1, 1 for F2, 2 for F3 when scenarioType === 1
+
+    let forces = []; // Array of objects: { mag: number, dir: 'Left'|'Right', color: string }
+    let netForceObj = { mag: 0, dir: 'Right' };
+
+    const colors = ['#2980b9', '#8e44ad', '#e67e22']; // Blue, Purple, Orange
+    const netColor = '#e74c3c'; // Red
+
+    const canvas = document.getElementById('forceCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function init() {
+        let now = new Date();
+        let yearLastDigit = now.getFullYear().toString().slice(-1);
+        let month = String(now.getMonth() + 1).padStart(2, '0');
+        let day = String(now.getDate()).padStart(2, '0');
+        let randomPart = Math.floor(1000 + Math.random() * 9000).toString();
+        sessionUID = yearLastDigit + month + day + randomPart;
+
+        setupHiDPI();
+        generateQuestion();
+    }
+
+    function setupHiDPI() {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+
+        ctx.scale(dpr, dpr);
+    }
+
+    function resetQuiz() {
+        scoreCorrect = 0;
+        scoreIncorrect = 0;
+        document.getElementById('correct-count').textContent = scoreCorrect;
+        document.getElementById('incorrect-count').textContent = scoreIncorrect;
+        generateQuestion();
+    }
+
+    function generateQuestion() {
+        document.getElementById('feedback').innerHTML = '';
+        const submitBtn = document.getElementById('submit-btn');
+        submitBtn.textContent = "Submit Answer";
+        submitBtn.style.backgroundColor = "#3498db";
+        submitBtn.onclick = checkAnswer;
+
+        scenarioType = Math.floor(Math.random() * 2);
+        targetIndex = Math.floor(Math.random() * 3);
+
+        let valid = false;
+        while (!valid) {
+            forces = [];
+            let netVal = 0;
+
+            for (let i = 0; i < 3; i++) {
+                // Integer values between 5 N and 35 N
+                let mag = Math.floor(Math.random() * 31) + 5;
+                let dir = Math.random() < 0.5 ? 'Right' : 'Left';
+                forces.push({ mag: mag, dir: dir, color: colors[i] });
+
+                netVal += (dir === 'Right' ? mag : -mag);
+            }
+
+            // Redraw if net force is zero
+            if (netVal !== 0) {
+                netForceObj = {
+                    mag: Math.abs(netVal),
+                    dir: netVal > 0 ? 'Right' : 'Left'
+                };
+                valid = true;
+            }
+        }
+
+        renderTableUI();
+        drawDiagram();
+    }
+
+    function renderTableUI() {
+        for (let i = 0; i < 3; i++) {
+            const cell = document.getElementById(`cell-f${i+1}`);
+            if (scenarioType === 1 && i === targetIndex) {
+                cell.innerHTML = `<input type="text" id="ans-target" placeholder="e.g. 28 N [Right]" autocomplete="off">`;
+            } else {
+                cell.innerHTML = `<span style="color: ${colors[i]}; font-size: 1.05rem; display: block; text-align: center;">${forces[i].mag} N [${forces[i].dir}]</span>`;
+            }
+        }
+
+        const cellNet = document.getElementById('cell-fnet');
+        if (scenarioType === 0) {
+            cellNet.innerHTML = `<input type="text" id="ans-target" placeholder="e.g. 14 N [Left]" autocomplete="off">`;
+        } else {
+            cellNet.innerHTML = `<span style="color: ${netColor}; font-size: 1.05rem; display: block; text-align: center;">${netForceObj.mag} N [${netForceObj.dir}]</span>`;
+        }
+    }
+
+    function drawDiagram() {
+        const cssWidth = canvas.width / (window.devicePixelRatio || 1);
+        const cssHeight = canvas.height / (window.devicePixelRatio || 1);
+
+        ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+        // Watermark ID
+        ctx.fillStyle = '#b0b6b9';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText("ID: " + sessionUID, cssWidth - 10, 15);
+
+        const boxWidth = 110;
+        const boxHeight = 70;
+        const boxX = cssWidth / 2 - boxWidth / 2;
+        const boxY = cssHeight / 2 - boxHeight / 2;
+        const centerX = boxX + boxWidth / 2;
+        const centerY = boxY + boxHeight / 2;
+
+        // Ground Line
+        ctx.strokeStyle = '#bdc3c7';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(30, boxY + boxHeight);
+        ctx.lineTo(cssWidth - 30, boxY + boxHeight);
+        ctx.stroke();
+
+        // Object Box
+        ctx.strokeStyle = '#2c3e50';
+        ctx.fillStyle = '#ecf0f1';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.rect(boxX, boxY, boxWidth, boxHeight);
+        ctx.fill();
+        ctx.stroke();
+
+        let leftForces = [];
+        let rightForces = [];
+
+        for (let i = 0; i < 3; i++) {
+            let item = { ...forces[i], index: i };
+            if (forces[i].dir === 'Left') leftForces.push(item);
+            else rightForces.push(item);
+        }
+
+        // Direct Linear Scaling Factor (px per Newton)
+        // Ensures exact mathematical proportionality: Length = Magnitude * pxPerNewton
+        const maxMag = Math.max(...forces.map(f => f.mag));
+        const maxAvailableSpace = (cssWidth - boxWidth) / 2 - 45; // Reserve margin for text labels
+        const pxPerNewton = maxAvailableSpace / maxMag;
+
+        // Draw Left-pointing forces
+        leftForces.forEach((f, idx) => {
+            let offset = (idx - (leftForces.length - 1) / 2) * 22;
+            let startY = centerY + offset;
+            let startX = boxX;
+            let arrowLen = f.mag * pxPerNewton;
+            let endX = startX - arrowLen;
+
+            drawArrow(startX, startY, endX, startY, f.color, 3);
+            drawForceLabel(f, endX - 8, startY, 'right', scenarioType === 1 && f.index === targetIndex);
+        });
+
+        // Draw Right-pointing forces
+        rightForces.forEach((f, idx) => {
+            let offset = (idx - (rightForces.length - 1) / 2) * 22;
+            let startY = centerY + offset;
+            let startX = boxX + boxWidth;
+            let arrowLen = f.mag * pxPerNewton;
+            let endX = startX + arrowLen;
+
+            drawArrow(startX, startY, endX, startY, f.color, 3);
+            drawForceLabel(f, endX + 8, startY, 'left', scenarioType === 1 && f.index === targetIndex);
+        });
+    }
+
+    function drawForceLabel(forceObj, x, y, align, isTarget) {
+        ctx.fillStyle = forceObj.color;
+        ctx.textBaseline = 'middle';
+        
+        if (isTarget) {
+            // Render sub-scripted label for target force (e.g. F₁)
+            ctx.font = 'bold 15px sans-serif';
+            let mainText = "F";
+            let subText = String(forceObj.index + 1);
+
+            let mainWidth = ctx.measureText(mainText).width;
+            ctx.font = 'bold 11px sans-serif';
+            let subWidth = ctx.measureText(subText).width;
+            let totalWidth = mainWidth + subWidth;
+
+            let startX = x;
+            if (align === 'right') startX = x - totalWidth;
+            else if (align === 'center') startX = x - totalWidth / 2;
+
+            ctx.font = 'bold 15px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(mainText, startX, y);
+
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillText(subText, startX + mainWidth, y + 4);
+        } else {
+            ctx.font = 'bold 13px sans-serif';
+            ctx.textAlign = align;
+            ctx.fillText(`${forceObj.mag} N`, x, y);
+        }
+    }
+
+    function drawArrow(fromx, fromy, tox, toy, color, width = 3) {
+        const headlen = 10;
+        const angle = Math.atan2(toy - fromy, tox - fromx);
+        
+        const lineEndX = tox - Math.cos(angle) * (headlen - 2);
+        const lineEndY = toy - Math.sin(angle) * (headlen - 2);
+
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = width;
+
+        ctx.beginPath();
+        ctx.moveTo(fromx, fromy);
+        ctx.lineTo(lineEndX, lineEndY);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(tox, toy);
+        ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    function validateFormat(rawInput) {
+        const strictPattern = /^\d+ N \[(Left|Right)\]$/;
+        const decimalPattern = /^\d+\.\d+ N \[(Left|Right)\]$/;
+        const noSpacePattern = /^\d+N \[(Left|Right)\]$/i;
+        const missingBracketPattern = /^\d+ N (Left|Right)$/i;
+        const lowercaseNPattern = /^\d+ n \[(Left|Right)\]$/;
+        const directionCasePattern = /^\d+ N \[(left|right)\]$/;
+
+        let trimmed = rawInput.trim();
+
+        if (!strictPattern.test(trimmed)) {
+            if (decimalPattern.test(trimmed)) {
+                return { valid: false, msg: 'Enter magnitude as a whole number (e.g. "28 N [Right]").' };
+            }
+            if (lowercaseNPattern.test(trimmed)) {
+                return { valid: false, msg: 'Check unit capitalization: Use an uppercase "N" for Newtons.' };
+            }
+            if (directionCasePattern.test(trimmed)) {
+                return { valid: false, msg: 'Check direction capitalization: Must be "[Left]" or "[Right]".' };
+            }
+            if (missingBracketPattern.test(trimmed)) {
+                return { valid: false, msg: 'Check direction formatting: Enclose direction in square brackets, e.g., "[Left]".' };
+            }
+            if (noSpacePattern.test(trimmed)) {
+                return { valid: false, msg: 'Check spacing: Include a space between number and unit (e.g. "28 N [Right]").' };
+            }
+            return { valid: false, msg: 'Check formatting: Format answer as number, space, "N", space, and "[Left]" or "[Right]" (e.g. "28 N [Right]").' };
+        }
+
+        let parts = trimmed.split(" ");
+        return { valid: true, valueStr: parts[0], dirStr: parts[2].slice(1, -1) };
+    }
+
+    function checkAnswer() {
+        const inputEl = document.getElementById('ans-target');
+        const feedback = document.getElementById('feedback');
+
+        if (!inputEl || !inputEl.value.trim()) {
+            feedback.innerHTML = '<span class="warning">Please fill out the missing force field before submitting.</span>';
+            return;
+        }
+
+        let res = validateFormat(inputEl.value);
+
+        if (!res.valid) {
+            feedback.innerHTML = `<span class="warning">${res.msg}</span>`;
+            return;
+        }
+
+        let expectedObj = scenarioType === 0 ? netForceObj : forces[targetIndex];
+        let expectedValStr = String(expectedObj.mag);
+        let expectedDirStr = expectedObj.dir;
+
+        if (res.valueStr !== expectedValStr || res.dirStr !== expectedDirStr) {
+            handleFailure(expectedValStr, expectedDirStr);
+            return;
+        }
+
+        // Correct answer
+        feedback.innerHTML = '<span class="correct">Correct! Magnitude, units, and direction are accurate.</span>';
+        scoreCorrect++;
+        document.getElementById('correct-count').textContent = scoreCorrect;
+        inputEl.disabled = true;
+
+        setTimeout(generateQuestion, 1800);
+    }
+
+    function handleFailure(expectedValStr, expectedDirStr) {
+        scoreIncorrect++;
+        document.getElementById('incorrect-count').textContent = scoreIncorrect;
+
+        const inputEl = document.getElementById('ans-target');
+        if (inputEl) inputEl.disabled = true;
+
+        const submitBtn = document.getElementById('submit-btn');
+        submitBtn.textContent = "Next Question";
+        submitBtn.style.backgroundColor = "#e67e22";
+        submitBtn.onclick = function() {
+            generateQuestion();
+        };
+
+        let targetLabel = scenarioType === 0 ? "F<sub>net</sub>" : `F<sub>${targetIndex + 1}</sub>`;
+
+        document.getElementById('feedback').innerHTML = `
+            <div class="ans-block">[${targetLabel} = ${expectedValStr} N [${expectedDirStr}]]</div>
+            <div class="continue-msg">Review your solution above, then select 'Next Question'.</div>
+        `;
+    }
+
+    window.onload = init;
+</script>
+
+</body>
+</html>
