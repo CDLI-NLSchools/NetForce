@@ -4,132 +4,345 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Net Force Skill Builder</title>
+    <!-- html2canvas for Dropbox proof clipboard capture -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
+        :root {
+            --primary: #2980b9;
+            --primary-hover: #1f6391;
+            --success: #27ae60;
+            --danger: #c0392b;
+            --warning-border: #f39c12;
+            --amber-soft: #fef9e7;
+            --amber-btn: #d68910;
+            --text-dark: #2c3e50;
+            --bg-page: #f4f7f6;
+            --card-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
+            background-color: var(--bg-page);
+            color: var(--text-dark);
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
+            padding: 20px 10px;
             margin: 0;
+            min-height: 100vh;
         }
+
         .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            max-width: 540px;
+            background-color: var(--card-bg);
+            padding: 24px 28px;
+            border-radius: 14px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            max-width: 560px;
             width: 100%;
             text-align: center;
+            position: relative;
         }
-        .score-board {
+
+        /* Top Progress Bar & Verification Header */
+        .header-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.82rem;
+            color: #7f8c8d;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: 0.3px;
+        }
+
+        .scorm-badge {
+            background: #e8f4f8;
+            color: #2980b9;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+        }
+
+        .progress-container {
+            background: #e5e8e8;
+            border-radius: 10px;
+            height: 14px;
+            width: 100%;
+            overflow: hidden;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #2ecc71, #27ae60);
+            height: 100%;
+            width: 0%;
+            transition: width 0.45s ease-out;
+            border-radius: 10px;
+        }
+
+        .stats-bar {
             display: flex;
             justify-content: space-around;
+            background: #f8fafc;
+            border: 1px solid #e1e8ed;
+            padding: 8px 12px;
+            border-radius: 8px;
             margin-bottom: 15px;
-            font-size: 1.2rem;
             font-weight: bold;
+            font-size: 0.95rem;
         }
-        .correct { color: #2ecc71; }
-        .incorrect { color: #e74c3c; }
-        .warning { color: #f39c12; }
-        
+        .stats-item span {
+            color: var(--primary);
+            font-size: 1.05rem;
+        }
+
+        h2 {
+            margin: 4px 0 8px 0;
+            color: #1a252f;
+            font-size: 1.5rem;
+        }
+
         canvas {
             background: #ffffff;
-            border: 1px solid #e0e0e0;
+            border: 1px solid #dcdde1;
             border-radius: 8px;
-            margin: 10px 0;
+            margin: 6px 0;
             width: 440px;
             height: 280px;
+            max-width: 100%;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .instruction-banner {
-            font-size: 0.95rem;
-            font-weight: bold;
+            font-size: 0.92rem;
+            font-weight: 600;
             color: #d35400;
-            margin: 5px 0 15px 0;
             background-color: #fdebd0;
-            padding: 8px 12px;
+            border: 1px solid #fad7a0;
+            padding: 6px 14px;
             border-radius: 20px;
             display: inline-block;
+            margin: 8px 0 12px 0;
         }
 
         .input-table {
             width: 100%;
-            margin: 15px 0;
-            border-collapse: collapse;
+            margin: 10px 0 14px 0;
+            border-collapse: separate;
+            border-spacing: 0 6px;
         }
         .input-table td {
-            padding: 8px;
-            text-align: left;
-            font-size: 1.1rem;
+            padding: 6px 10px;
+            font-size: 1.05rem;
             font-weight: bold;
         }
         .input-table td:first-child {
-            width: 35%;
+            width: 32%;
+            text-align: right;
+            padding-right: 14px;
         }
 
         input[type="text"] {
             width: 100%;
-            padding: 8px;
-            font-size: 0.95rem;
+            padding: 9px 10px;
+            font-size: 0.98rem;
             text-align: center;
-            border: 1px solid #bdc3c7;
-            border-radius: 4px;
-            box-sizing: border-box;
+            border: 2px solid #bdc3c7;
+            border-radius: 6px;
             color: #2c3e50;
             font-weight: bold;
+            transition: border-color 0.2s, background-color 0.2s;
+            outline: none;
+        }
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            background-color: #fafffe;
+        }
+        input[type="text"]:disabled {
+            background-color: #f2f4f4;
+            color: #566573;
+            border-color: #d5dbdb;
         }
 
         .button-group {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             justify-content: center;
-            margin-top: 10px;
+            margin-top: 8px;
         }
 
         button {
             border: none;
-            padding: 12px 25px;
-            font-size: 1rem;
+            padding: 12px 20px;
+            font-size: 0.98rem;
             font-weight: bold;
-            border-radius: 5px;
+            border-radius: 6px;
             cursor: pointer;
-            transition: background 0.2s;
-            flex: 1;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
         #submit-btn {
             background-color: #3498db;
             color: white;
+            flex: 2;
         }
-        #submit-btn:hover { background-color: #2980b9; }
+        #submit-btn:hover:not(:disabled) { background-color: var(--primary-hover); }
 
         #restart-btn {
-            background-color: #e67e22;
+            background-color: #7f8c8d;
             color: white;
+            flex: 1;
         }
-        #restart-btn:hover { background-color: #d35400; }
+        #restart-btn:hover { background-color: #626567; }
 
+        /* Amber Bailout Button */
+        .bailout-container {
+            margin-top: 10px;
+            padding-top: 4px;
+        }
+        #bailout-btn {
+            width: 100%;
+            background-color: #fef9e7;
+            color: #935116;
+            border: 1.5px dashed var(--amber-btn);
+            font-size: 0.92rem;
+            padding: 9px 14px;
+        }
+        #bailout-btn:hover:not(:disabled) {
+            background-color: #fae5b9;
+            color: #783407;
+            border-style: solid;
+        }
+        #bailout-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        /* Feedback & Walkthrough Box */
         #feedback {
-            margin-top: 15px;
-            font-weight: bold;
-            min-height: 50px;
-            padding: 0 10px;
-            line-height: 1.5;
+            margin-top: 14px;
+            text-align: left;
+            min-height: 24px;
         }
 
-        .ans-block {
+        .feedback-banner {
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.94rem;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .feedback-correct {
+            background-color: #eafaf1;
+            color: #1e8449;
+            border: 1px solid #a9dfbf;
+        }
+        .feedback-notation {
+            background-color: #fef9e7;
+            color: #9a7d0a;
+            border-left: 5px solid var(--warning-border);
+            font-size: 0.92rem;
+            padding: 9px 12px;
+            text-align: left;
+        }
+        .feedback-incorrect {
+            background-color: #fdedec;
+            color: #922b21;
+            border: 1px solid #f5b7b1;
+        }
+
+        .walkthrough-box {
+            background: #ffffff;
+            border: 1.5px solid #f39c12;
+            border-radius: 8px;
+            padding: 16px 18px;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.08);
+            animation: fadeIn 0.3s ease-in;
+        }
+        .walkthrough-header {
+            color: #b9770e;
+            font-weight: bold;
             font-size: 1rem;
-            margin-bottom: 4px;
-            color: #27ae60;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-bottom: 1px solid #fdebd0;
+            padding-bottom: 6px;
+        }
+        .step-item {
+            margin-bottom: 11px;
+            font-size: 0.93rem;
+            line-height: 1.5;
+            color: #34495e;
+        }
+        .step-num {
+            font-weight: bold;
+            color: #d35400;
+        }
+        .math-statement {
+            font-family: 'Cambria', 'Georgia', serif;
+            font-size: 1.0rem;
+            background: #fdfefe;
+            padding: 5px 10px;
+            margin: 5px 0;
+            display: block;
+            border-radius: 4px;
+            border-left: 3px solid #2980b9;
+            font-weight: 600;
+            color: #1e293b;
         }
 
-        .continue-msg {
+        /* Victory Overlay */
+        .victory-card {
+            background: linear-gradient(135deg, #fafffa, #eafaf1);
+            border: 2px solid var(--success);
+            padding: 18px;
+            border-radius: 10px;
+            margin-top: 15px;
+            animation: bounceIn 0.4s ease-out;
+        }
+        .victory-title {
+            color: var(--success);
+            font-size: 1.3rem;
             font-weight: bold;
-            font-size: 0.95rem;
-            color: #c0392b;
-            margin-top: 8px;
+            margin-bottom: 6px;
+        }
+
+        .proof-btn-container {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .proof-btn {
+            background-color: #27ae60;
+            color: white;
+            font-size: 0.88rem;
+            padding: 8px 14px;
+        }
+        .proof-btn:hover { background-color: #1e8449; }
+
+        .toast-msg {
+            font-size: 0.8rem;
+            color: #27ae60;
+            margin-top: 6px;
+            font-weight: bold;
         }
 
         sub {
@@ -139,17 +352,40 @@
             position: relative;
             bottom: -0.2em;
         }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.96); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Net Force Skill Builder</h2>
+<div class="container" id="activity-card">
     
-    <div class="score-board">
-        <span class="correct">Correct: <span id="correct-count">0</span></span>
-        <span class="incorrect">Incorrect: <span id="incorrect-count">0</span></span>
+    <!-- Header Meta: Verification & SCORM State -->
+    <div class="header-meta">
+        <div>Session ID: <strong id="session-uid">...</strong></div>
+        <div id="scorm-status-badge" class="scorm-badge">SCORM: Connecting...</div>
     </div>
+
+    <!-- Progress Fill Bar -->
+    <div class="progress-container" title="Progress toward 100% Mastery">
+        <div class="progress-fill" id="progress-fill"></div>
+    </div>
+
+    <!-- Stats Dashboard -->
+    <div class="stats-bar">
+        <div class="stats-item">Mastery: <span id="mastery-percent">0%</span></div>
+        <div class="stats-item">Target: <span id="progress-count">0 / 5</span></div>
+        <div class="stats-item">Attempts: <span id="total-attempts">0</span></div>
+    </div>
+
+    <h2>Net Force Skill Builder</h2>
 
     <canvas id="forceCanvas" width="440" height="280"></canvas>
 
@@ -178,27 +414,150 @@
 
     <div class="button-group">
         <button id="submit-btn" onclick="checkAnswer()">Submit Answer</button>
-        <button id="restart-btn" onclick="resetQuiz()">Restart Quiz</button>
+        <button id="restart-btn" onclick="resetPracticeSession()">Reset</button>
+    </div>
+
+    <div class="bailout-container">
+        <button id="bailout-btn" onclick="triggerWalkthrough(false)">💡 Walk Me Through This One</button>
     </div>
 
     <div id="feedback"></div>
+
+    <!-- Mastery Victory Card -->
+    <div id="victory-card" class="victory-card" style="display: none;">
+        <div class="victory-title">🎉 Mastery Goal Achieved! (100%)</div>
+        <p style="margin: 6px 0; font-size: 0.92rem; color: #34495e;">
+            Your grade of <strong>100%</strong> has been permanently committed to Brightspace. You can keep practicing safely without losing your grade, or copy your completion proof below.
+        </p>
+        <div class="proof-btn-container">
+            <button class="proof-btn" onclick="copyProofToClipboard()">📋 Copy Proof to Clipboard</button>
+        </div>
+        <div id="toast" class="toast-msg" style="display:none;">Proof image copied to clipboard!</div>
+    </div>
+
 </div>
 
 <script>
-    let scoreCorrect = 0;
-    let scoreIncorrect = 0;
+    /* ==========================================================================
+       SCORM 1.2 D2L / BRIGHTSPACE INTEGRATION (RECURSIVE DISCOVERY)
+       ========================================================================== */
+    let scormAPI = null;
+    let isScormConnected = false;
+    let previousLmsScore = 0;
+
+    function findScormAPI(win) {
+        let attempts = 0;
+        while (win && attempts < 10) {
+            try {
+                if (win.API) return win.API;
+            } catch (e) {
+                break;
+            }
+            if (win.parent && win.parent !== win) {
+                attempts++;
+                win = win.parent;
+            } else {
+                break;
+            }
+        }
+        return null;
+    }
+
+    function initSCORM() {
+        try {
+            scormAPI = findScormAPI(window) || (window.opener ? findScormAPI(window.opener) : null);
+            const badge = document.getElementById('scorm-status-badge');
+
+            if (scormAPI) {
+                let initResult = scormAPI.LMSInitialize("");
+                if (initResult === "true" || initResult === true) {
+                    isScormConnected = true;
+                    badge.textContent = "D2L SCORM Connected";
+                    badge.style.background = "#eafaf1";
+                    badge.style.color = "#27ae60";
+
+                    let existingRaw = scormAPI.LMSGetValue("cmi.core.score.raw");
+                    if (existingRaw !== "" && !isNaN(existingRaw)) {
+                        previousLmsScore = parseFloat(existingRaw);
+                    }
+
+                    scormAPI.LMSSetValue("cmi.core.score.min", "0");
+                    scormAPI.LMSSetValue("cmi.core.score.max", "100");
+
+                    let currentStatus = scormAPI.LMSGetValue("cmi.core.lesson_status");
+                    if (currentStatus !== "completed" && currentStatus !== "passed") {
+                        scormAPI.LMSSetValue("cmi.core.lesson_status", "incomplete");
+                    }
+                    scormAPI.LMSCommit("");
+                } else {
+                    badge.textContent = "SCORM Standalone";
+                }
+            } else {
+                badge.textContent = "Offline Mode";
+            }
+        } catch (err) {
+            console.warn("SCORM Discovery failed or running locally:", err);
+            document.getElementById('scorm-status-badge').textContent = "Offline Mode";
+        }
+    }
+
+    function updateScormScore(newScore) {
+        if (!isScormConnected || !scormAPI) return;
+
+        try {
+            let scoreToCommit = Math.max(previousLmsScore, newScore);
+            previousLmsScore = scoreToCommit;
+
+            scormAPI.LMSSetValue("cmi.core.score.raw", scoreToCommit.toString());
+
+            if (scoreToCommit >= 100) {
+                scormAPI.LMSSetValue("cmi.core.lesson_status", "completed");
+            } else {
+                let currentStatus = scormAPI.LMSGetValue("cmi.core.lesson_status");
+                if (currentStatus !== "completed") {
+                    scormAPI.LMSSetValue("cmi.core.lesson_status", "incomplete");
+                }
+            }
+            scormAPI.LMSCommit("");
+        } catch (e) {
+            console.error("Error committing score to Brightspace:", e);
+        }
+    }
+
+    function finishSCORM() {
+        if (isScormConnected && scormAPI) {
+            try {
+                scormAPI.LMSCommit("");
+                scormAPI.LMSFinish("");
+            } catch (e) {
+                console.warn("LMSFinish invocation notice:", e);
+            }
+        }
+    }
+
+    window.addEventListener('beforeunload', finishSCORM);
+
+
+    /* ==========================================================================
+       ACTIVITY STATE & CORE LOGIC
+       ========================================================================== */
+    const MASTERY_GOAL = 5;
+    let consecutiveCorrect = 0;
+    let highestMasteryPercentage = 0;
+    let totalAttemptsCount = 0;
     let sessionUID = "";
+    let isAwaitingNext = false;
 
     // 0: Find F_net (given F1, F2, F3)
     // 1: Find target force (given 2 forces and F_net)
     let scenarioType = 0; 
-    let targetIndex = 0; // 0 for F1, 1 for F2, 2 for F3 when scenarioType === 1
+    let targetIndex = 0; 
 
-    let forces = []; // Array of objects: { mag: number, dir: 'Left'|'Right', color: string }
+    let forces = []; 
     let netForceObj = { mag: 0, dir: 'Right' };
 
-    const colors = ['#2980b9', '#8e44ad', '#e67e22']; // Blue, Purple, Orange
-    const netColor = '#e74c3c'; // Red
+    const colors = ['#2980b9', '#8e44ad', '#e67e22'];
+    const netColor = '#e74c3c'; 
 
     const canvas = document.getElementById('forceCanvas');
     const ctx = canvas.getContext('2d');
@@ -209,36 +568,53 @@
         let month = String(now.getMonth() + 1).padStart(2, '0');
         let day = String(now.getDate()).padStart(2, '0');
         let randomPart = Math.floor(1000 + Math.random() * 9000).toString();
-        sessionUID = yearLastDigit + month + day + randomPart;
+        sessionUID = `${yearLastDigit}${month}${day}-${randomPart}`;
+        document.getElementById('session-uid').textContent = sessionUID;
 
         setupHiDPI();
+        initSCORM();
+
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                if (isAwaitingNext) {
+                    generateQuestion();
+                } else {
+                    checkAnswer();
+                }
+            }
+        });
+
         generateQuestion();
     }
 
     function setupHiDPI() {
         const dpr = window.devicePixelRatio || 1;
         const rect = canvas.getBoundingClientRect();
+        const displayWidth = rect.width || 440;
+        const displayHeight = rect.height || 280;
 
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-
-        ctx.scale(dpr, dpr);
+        canvas.width = Math.round(displayWidth * dpr);
+        canvas.height = Math.round(displayHeight * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
-    function resetQuiz() {
-        scoreCorrect = 0;
-        scoreIncorrect = 0;
-        document.getElementById('correct-count').textContent = scoreCorrect;
-        document.getElementById('incorrect-count').textContent = scoreIncorrect;
+    function resetPracticeSession() {
+        consecutiveCorrect = 0;
+        updateUIProgress();
         generateQuestion();
     }
 
     function generateQuestion() {
+        isAwaitingNext = false;
         document.getElementById('feedback').innerHTML = '';
+
         const submitBtn = document.getElementById('submit-btn');
         submitBtn.textContent = "Submit Answer";
         submitBtn.style.backgroundColor = "#3498db";
         submitBtn.onclick = checkAnswer;
+
+        const bailoutBtn = document.getElementById('bailout-btn');
+        bailoutBtn.disabled = false;
 
         scenarioType = Math.floor(Math.random() * 2);
         targetIndex = Math.floor(Math.random() * 3);
@@ -249,7 +625,6 @@
             let netVal = 0;
 
             for (let i = 0; i < 3; i++) {
-                // Integer values between 5 N and 35 N
                 let mag = Math.floor(Math.random() * 31) + 5;
                 let dir = Math.random() < 0.5 ? 'Right' : 'Left';
                 forces.push({ mag: mag, dir: dir, color: colors[i] });
@@ -257,7 +632,6 @@
                 netVal += (dir === 'Right' ? mag : -mag);
             }
 
-            // Redraw if net force is zero
             if (netVal !== 0) {
                 netForceObj = {
                     mag: Math.abs(netVal),
@@ -269,13 +643,16 @@
 
         renderTableUI();
         drawDiagram();
+
+        const inputEl = document.getElementById('ans-target');
+        if (inputEl) inputEl.focus();
     }
 
     function renderTableUI() {
         for (let i = 0; i < 3; i++) {
             const cell = document.getElementById(`cell-f${i+1}`);
             if (scenarioType === 1 && i === targetIndex) {
-                cell.innerHTML = `<input type="text" id="ans-target" placeholder="e.g. 28 N [Right]" autocomplete="off">`;
+                cell.innerHTML = `<input type="text" id="ans-target" placeholder="e.g. 28 N [Right]" autocomplete="off" spellcheck="false">`;
             } else {
                 cell.innerHTML = `<span style="color: ${colors[i]}; font-size: 1.05rem; display: block; text-align: center;">${forces[i].mag} N [${forces[i].dir}]</span>`;
             }
@@ -283,29 +660,28 @@
 
         const cellNet = document.getElementById('cell-fnet');
         if (scenarioType === 0) {
-            cellNet.innerHTML = `<input type="text" id="ans-target" placeholder="e.g. 14 N [Left]" autocomplete="off">`;
+            cellNet.innerHTML = `<input type="text" id="ans-target" placeholder="e.g. 14 N [Left]" autocomplete="off" spellcheck="false">`;
         } else {
             cellNet.innerHTML = `<span style="color: ${netColor}; font-size: 1.05rem; display: block; text-align: center;">${netForceObj.mag} N [${netForceObj.dir}]</span>`;
         }
     }
 
     function drawDiagram() {
-        const cssWidth = canvas.width / (window.devicePixelRatio || 1);
-        const cssHeight = canvas.height / (window.devicePixelRatio || 1);
+        const cssWidth = 440;
+        const cssHeight = 280;
 
         ctx.clearRect(0, 0, cssWidth, cssHeight);
 
         // Watermark ID
         ctx.fillStyle = '#b0b6b9';
-        ctx.font = '11px sans-serif';
+        ctx.font = '10px monospace';
         ctx.textAlign = 'right';
-        ctx.fillText("ID: " + sessionUID, cssWidth - 10, 15);
+        ctx.fillText("ID: " + sessionUID, cssWidth - 10, 16);
 
         const boxWidth = 110;
         const boxHeight = 70;
         const boxX = cssWidth / 2 - boxWidth / 2;
         const boxY = cssHeight / 2 - boxHeight / 2;
-        const centerX = boxX + boxWidth / 2;
         const centerY = boxY + boxHeight / 2;
 
         // Ground Line
@@ -334,13 +710,11 @@
             else rightForces.push(item);
         }
 
-        // Direct Linear Scaling Factor (px per Newton)
-        // Ensures exact mathematical proportionality: Length = Magnitude * pxPerNewton
         const maxMag = Math.max(...forces.map(f => f.mag));
-        const maxAvailableSpace = (cssWidth - boxWidth) / 2 - 45; // Reserve margin for text labels
+        const maxAvailableSpace = (cssWidth - boxWidth) / 2 - 45;
         const pxPerNewton = maxAvailableSpace / maxMag;
 
-        // Draw Left-pointing forces
+        // Draw Left forces
         leftForces.forEach((f, idx) => {
             let offset = (idx - (leftForces.length - 1) / 2) * 22;
             let startY = centerY + offset;
@@ -352,7 +726,7 @@
             drawForceLabel(f, endX - 8, startY, 'right', scenarioType === 1 && f.index === targetIndex);
         });
 
-        // Draw Right-pointing forces
+        // Draw Right forces
         rightForces.forEach((f, idx) => {
             let offset = (idx - (rightForces.length - 1) / 2) * 22;
             let startY = centerY + offset;
@@ -370,7 +744,6 @@
         ctx.textBaseline = 'middle';
         
         if (isTarget) {
-            // Render sub-scripted label for target force (e.g. F₁)
             ctx.font = 'bold 15px sans-serif';
             let mainText = "F";
             let subText = String(forceObj.index + 1);
@@ -421,6 +794,9 @@
         ctx.fill();
     }
 
+    /* ==========================================================================
+       SMART VALIDATION & SUBMISSION
+       ========================================================================== */
     function validateFormat(rawInput) {
         const strictPattern = /^\d+ N \[(Left|Right)\]$/;
         const decimalPattern = /^\d+\.\d+ N \[(Left|Right)\]$/;
@@ -433,10 +809,10 @@
 
         if (!strictPattern.test(trimmed)) {
             if (decimalPattern.test(trimmed)) {
-                return { valid: false, msg: 'Enter magnitude as a whole number (e.g. "28 N [Right]").' };
+                return { valid: false, msg: 'Enter magnitude as a whole number (e.g., "28 N [Right]").' };
             }
             if (lowercaseNPattern.test(trimmed)) {
-                return { valid: false, msg: 'Check unit capitalization: Use an uppercase "N" for Newtons.' };
+                return { valid: false, msg: 'Check unit capitalization: Use uppercase "N" for Newtons.' };
             }
             if (directionCasePattern.test(trimmed)) {
                 return { valid: false, msg: 'Check direction capitalization: Must be "[Left]" or "[Right]".' };
@@ -445,9 +821,9 @@
                 return { valid: false, msg: 'Check direction formatting: Enclose direction in square brackets, e.g., "[Left]".' };
             }
             if (noSpacePattern.test(trimmed)) {
-                return { valid: false, msg: 'Check spacing: Include a space between number and unit (e.g. "28 N [Right]").' };
+                return { valid: false, msg: 'Check spacing: Include a space between number and unit (e.g., "28 N [Right]").' };
             }
-            return { valid: false, msg: 'Check formatting: Format answer as number, space, "N", space, and "[Left]" or "[Right]" (e.g. "28 N [Right]").' };
+            return { valid: false, msg: 'Check formatting: Format answer as number, space, "N", space, and "[Left]" or "[Right]" (e.g., "28 N [Right]").' };
         }
 
         let parts = trimmed.split(" ");
@@ -455,59 +831,380 @@
     }
 
     function checkAnswer() {
+        if (isAwaitingNext) {
+            generateQuestion();
+            return;
+        }
+
         const inputEl = document.getElementById('ans-target');
         const feedback = document.getElementById('feedback');
 
         if (!inputEl || !inputEl.value.trim()) {
-            feedback.innerHTML = '<span class="warning">Please fill out the missing force field before submitting.</span>';
+            feedback.innerHTML = '<div class="feedback-notation">⚠️ Please fill out the missing force field before submitting.</div>';
             return;
         }
 
         let res = validateFormat(inputEl.value);
 
         if (!res.valid) {
-            feedback.innerHTML = `<span class="warning">${res.msg}</span>`;
+            feedback.innerHTML = `<div class="feedback-notation">⚠️ ${res.msg}</div>`;
             return;
         }
+
+        totalAttemptsCount++;
+        document.getElementById('total-attempts').textContent = totalAttemptsCount;
 
         let expectedObj = scenarioType === 0 ? netForceObj : forces[targetIndex];
         let expectedValStr = String(expectedObj.mag);
         let expectedDirStr = expectedObj.dir;
 
         if (res.valueStr !== expectedValStr || res.dirStr !== expectedDirStr) {
-            handleFailure(expectedValStr, expectedDirStr);
+            triggerWalkthrough(true);
             return;
         }
 
-        // Correct answer
-        feedback.innerHTML = '<span class="correct">Correct! Magnitude, units, and direction are accurate.</span>';
-        scoreCorrect++;
-        document.getElementById('correct-count').textContent = scoreCorrect;
+        // Correct Answer
+        consecutiveCorrect++;
+        let currentCalculatedScore = Math.min(100, Math.round((consecutiveCorrect / MASTERY_GOAL) * 100));
+        highestMasteryPercentage = Math.max(highestMasteryPercentage, currentCalculatedScore);
+
+        updateScormScore(highestMasteryPercentage);
+        updateUIProgress();
+
+        feedback.innerHTML = '<div class="feedback-banner feedback-correct">✓ Spot on! Magnitude, units, and direction are accurate.</div>';
         inputEl.disabled = true;
 
-        setTimeout(generateQuestion, 1800);
+        if (consecutiveCorrect >= MASTERY_GOAL) {
+            document.getElementById('victory-card').style.display = 'block';
+        }
+
+        setTimeout(generateQuestion, 1600);
     }
 
-    function handleFailure(expectedValStr, expectedDirStr) {
-        scoreIncorrect++;
-        document.getElementById('incorrect-count').textContent = scoreIncorrect;
+    /* ==========================================================================
+       "WALK ME THROUGH THIS ONE" (TUG-OF-WAR: F_larger - F_smaller)
+       ========================================================================== */
+    function triggerWalkthrough(triggeredByError) {
+        consecutiveCorrect = 0; // Forfeit current streak (+0%)
+        updateUIProgress();
 
         const inputEl = document.getElementById('ans-target');
-        if (inputEl) inputEl.disabled = true;
-
+        const feedback = document.getElementById('feedback');
         const submitBtn = document.getElementById('submit-btn');
-        submitBtn.textContent = "Next Question";
-        submitBtn.style.backgroundColor = "#e67e22";
-        submitBtn.onclick = function() {
-            generateQuestion();
-        };
+        const bailoutBtn = document.getElementById('bailout-btn');
 
-        let targetLabel = scenarioType === 0 ? "F<sub>net</sub>" : `F<sub>${targetIndex + 1}</sub>`;
+        let expectedObj = scenarioType === 0 ? netForceObj : forces[targetIndex];
+        let expectedValStr = String(expectedObj.mag);
+        let expectedDirStr = expectedObj.dir;
 
-        document.getElementById('feedback').innerHTML = `
-            <div class="ans-block">[${targetLabel} = ${expectedValStr} N [${expectedDirStr}]]</div>
-            <div class="continue-msg">Review your solution above, then select 'Next Question'.</div>
-        `;
+        if (inputEl) {
+            inputEl.value = `${expectedValStr} N [${expectedDirStr}]`;
+            inputEl.disabled = true;
+            inputEl.style.backgroundColor = "#fef9e7";
+        }
+        bailoutBtn.disabled = true;
+
+        isAwaitingNext = true;
+        submitBtn.textContent = "Try a Fresh Problem (Enter ↵)";
+        submitBtn.style.backgroundColor = "#d35400";
+        submitBtn.onclick = generateQuestion;
+
+        let walkthroughHTML = "";
+
+        if (scenarioType === 0) {
+            // SCENARIO 0: FINDING F_net (3 KNOWN FORCES)
+            let leftList = forces.filter(f => f.dir === 'Left');
+            let rightList = forces.filter(f => f.dir === 'Right');
+
+            let totalLeft = leftList.reduce((acc, f) => acc + f.mag, 0);
+            let totalRight = rightList.reduce((acc, f) => acc + f.mag, 0);
+
+            let leftSumStr = leftList.map(f => `${f.mag} N`).join(' + ');
+            let rightSumStr = rightList.map(f => `${f.mag} N`).join(' + ');
+
+            let winningDir = totalRight > totalLeft ? 'right' : 'left';
+            let largerVal = Math.max(totalRight, totalLeft);
+            let smallerVal = Math.min(totalRight, totalLeft);
+
+            walkthroughHTML = `
+                ${triggeredByError ? '<div class="feedback-banner feedback-incorrect">✗ Incorrect calculation. Review the complete solution below:</div>' : ''}
+                <div class="walkthrough-box">
+                    <div class="walkthrough-header">
+                        <span>💡 Step-by-Step Problem Walkthrough</span>
+                    </div>
+                    
+                    <div class="step-item">
+                        <span class="step-num">Step 1: Do a little advance work (total each side)</span><br>
+                        Forces pulling in the same direction work together on the same team, so add them up first:
+                        <div class="math-statement">
+                            Forces to the left: F<sub>left</sub> = ${leftSumStr} = ${totalLeft} N<br>
+                            Forces to the right: F<sub>right</sub> = ${rightSumStr} = ${totalRight} N
+                        </div>
+                    </div>
+
+                    <div class="step-item">
+                        <span class="step-num">Step 2: Compare the two sides to find the larger team</span><br>
+                        Since <strong>${largerVal} N &gt; ${smallerVal} N</strong>, the forces to the <strong>${winningDir}</strong> are larger. The net force will point to the <strong>${winningDir}</strong>.
+                    </div>
+
+                    <div class="step-item">
+                        <span class="step-num">Step 3: Calculate the net force magnitude</span><br>
+                        Subtract the smaller total from the larger total so all numbers stay positive:
+                        <div class="math-statement">
+                            F<sub>net</sub> = F<sub>larger</sub> &minus; F<sub>smaller</sub><br>
+                            F<sub>net</sub> = ${largerVal} N &minus; ${smallerVal} N = ${expectedValStr} N
+                        </div>
+                    </div>
+
+                    <div class="step-item">
+                        <span class="step-num">Step 4: State the final vector with direction</span><br>
+                        Since the larger total is to the ${winningDir}, the net force acts to the ${winningDir}:
+                        <div class="math-statement">
+                            F&#8407;<sub>net</sub> = <strong>${expectedValStr} N [${expectedDirStr}]</strong>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 0.88rem; color: #7f8c8d; margin-top: 6px;">
+                        Press <strong>Enter ↵</strong> or click the button above to practice a fresh problem.
+                    </div>
+                </div>
+            `;
+        } else {
+            // SCENARIO 1: FINDING AN UNKNOWN COMPONENT FORCE F_k
+            let k = targetIndex;
+            let targetLabel = `F<sub>${k + 1}</sub>`;
+            let targetDir = forces[k].dir;
+            let targetMag = forces[k].mag;
+
+            let netMag = netForceObj.mag;
+            let netDir = netForceObj.dir;
+
+            // The net force direction dictates which side is the LARGER team
+            let isTargetOnLargerSide = (targetDir === netDir);
+            let largerTeamDir = netDir;
+            let smallerTeamDir = netDir === 'Right' ? 'Left' : 'Right';
+
+            // Partition the OTHER two known forces
+            let otherForces = [0, 1, 2].filter(idx => idx !== k).map(idx => ({ ...forces[idx], label: `F<sub>${idx + 1}</sub>` }));
+            let knownOnLargerSide = otherForces.filter(f => f.dir === largerTeamDir);
+            let knownOnSmallerSide = otherForces.filter(f => f.dir === smallerTeamDir);
+
+            let sumKnownLarger = knownOnLargerSide.reduce((acc, f) => acc + f.mag, 0);
+            let sumKnownSmaller = knownOnSmallerSide.reduce((acc, f) => acc + f.mag, 0);
+
+            if (isTargetOnLargerSide) {
+                // CASE 1A: Target force is on the LARGER side
+                // F_net = F_larger - F_smaller
+                // F_net = (F_target + sumKnownLarger) - sumKnownSmaller
+                let advanceWorkText = "";
+                if (knownOnSmallerSide.length > 1) {
+                    let smallerSumStr = knownOnSmallerSide.map(f => `${f.mag} N`).join(' + ');
+                    advanceWorkText = `The smaller side (${smallerTeamDir.toLowerCase()}) has two forces, so total them: ${smallerSumStr} = <strong>${sumKnownSmaller} N</strong>.<br>`;
+                }
+
+                let largerFormulaStr = knownOnLargerSide.length > 0 
+                    ? `(${targetLabel} + ${sumKnownLarger} N)` 
+                    : `${targetLabel}`;
+
+                let smallerFormulaStr = `${sumKnownSmaller} N`;
+
+                let step3Algebra = "";
+                if (knownOnLargerSide.length > 0) {
+                    let combinedConstant = sumKnownLarger - sumKnownSmaller;
+                    if (combinedConstant >= 0) {
+                        step3Algebra = `
+                            ${netMag} N = ${targetLabel} + ${combinedConstant} N<br>
+                            ${targetLabel} = ${netMag} N &minus; ${combinedConstant} N = <strong>${targetMag} N</strong>
+                        `;
+                    } else {
+                        let posConst = Math.abs(combinedConstant);
+                        step3Algebra = `
+                            ${netMag} N = ${targetLabel} &minus; ${posConst} N<br>
+                            ${targetLabel} = ${netMag} N + ${posConst} N = <strong>${targetMag} N</strong>
+                        `;
+                    }
+                } else {
+                    step3Algebra = `
+                        ${netMag} N = ${targetLabel} &minus; ${smallerFormulaStr}<br>
+                        ${targetLabel} = ${netMag} N + ${smallerFormulaStr} = <strong>${targetMag} N</strong>
+                    `;
+                }
+
+                walkthroughHTML = `
+                    ${triggeredByError ? '<div class="feedback-banner feedback-incorrect">✗ Incorrect calculation. Review the complete solution below:</div>' : ''}
+                    <div class="walkthrough-box">
+                        <div class="walkthrough-header">
+                            <span>💡 Step-by-Step Problem Walkthrough</span>
+                        </div>
+
+                        <div class="step-item">
+                            <span class="step-num">Step 1: Identify which side must be the larger force</span><br>
+                            Since the net force acts to the <strong>${netDir}</strong>, the <strong>${largerTeamDir.toLowerCase()} side must be the larger team</strong>.<br>
+                            This means ${targetLabel} is on the larger side!
+                        </div>
+
+                        <div class="step-item">
+                            <span class="step-num">Step 2: Set up the Tug-of-War formula</span><br>
+                            ${advanceWorkText}
+                            <div class="math-statement">
+                                F<sub>net</sub> = F<sub>larger</sub> &minus; F<sub>smaller</sub><br>
+                                ${netMag} N = ${largerFormulaStr} &minus; ${smallerFormulaStr}
+                            </div>
+                        </div>
+
+                        <div class="step-item">
+                            <span class="step-num">Step 3: Solve for the magnitude of ${targetLabel}</span><br>
+                            Keep all numbers positive while isolating ${targetLabel}:
+                            <div class="math-statement">
+                                ${step3Algebra}
+                            </div>
+                        </div>
+
+                        <div class="step-item">
+                            <span class="step-num">Step 4: State the final vector with direction</span><br>
+                            From the diagram, ${targetLabel} points to the ${targetDir.toLowerCase()}:
+                            <div class="math-statement">
+                                F&#8407;<sub>${k + 1}</sub> = <strong>${expectedValStr} N [${expectedDirStr}]</strong>
+                            </div>
+                        </div>
+
+                        <div style="font-size: 0.88rem; color: #7f8c8d; margin-top: 6px;">
+                            Press <strong>Enter ↵</strong> or click the button above to practice a fresh problem.
+                        </div>
+                    </div>
+                `;
+            } else {
+                // CASE 1B: Target force is on the SMALLER side
+                // F_net = F_larger - F_smaller
+                // F_net = sumKnownLarger - (F_target + sumKnownSmaller)
+                let largerSumStr = knownOnLargerSide.map(f => `${f.mag} N`).join(' + ');
+                let advanceWorkText = "";
+                if (knownOnLargerSide.length > 1) {
+                    advanceWorkText = `The larger side (${largerTeamDir.toLowerCase()}) has two known forces, so add them first: ${largerSumStr} = <strong>${sumKnownLarger} N</strong>.<br>`;
+                }
+
+                let smallerExpression = knownOnSmallerSide.length > 0 
+                    ? `(${targetLabel} + ${sumKnownSmaller} N)` 
+                    : `${targetLabel}`;
+
+                let seatSwapStep = "";
+                if (knownOnSmallerSide.length > 0) {
+                    seatSwapStep = `
+                        ${netMag} N = ${sumKnownLarger} N &minus; (${targetLabel} + ${sumKnownSmaller} N)<br>
+                        ${netMag} N = ${sumKnownLarger - sumKnownSmaller} N &minus; ${targetLabel}<br>
+                        <em>Seat swap: move ${targetLabel} to the left to keep it positive:</em><br>
+                        ${targetLabel} = ${sumKnownLarger - sumKnownSmaller} N &minus; ${netMag} N = <strong>${targetMag} N</strong>
+                    `;
+                } else {
+                    seatSwapStep = `
+                        ${netMag} N = ${sumKnownLarger} N &minus; ${targetLabel}<br>
+                        <em>Seat swap: move ${targetLabel} to the left to keep it positive:</em><br>
+                        ${targetLabel} = ${sumKnownLarger} N &minus; ${netMag} N = <strong>${targetMag} N</strong>
+                    `;
+                }
+
+                walkthroughHTML = `
+                    ${triggeredByError ? '<div class="feedback-banner feedback-incorrect">✗ Incorrect calculation. Review the complete solution below:</div>' : ''}
+                    <div class="walkthrough-box">
+                        <div class="walkthrough-header">
+                            <span>💡 Step-by-Step Problem Walkthrough</span>
+                        </div>
+
+                        <div class="step-item">
+                            <span class="step-num">Step 1: Identify which side must be the larger force</span><br>
+                            Since the net force acts to the <strong>${netDir}</strong>, the <strong>${largerTeamDir.toLowerCase()} side must be the larger team</strong>.<br>
+                            This means ${targetLabel} (pointing ${targetDir.toLowerCase()}) is on the <strong>smaller side</strong>.
+                        </div>
+
+                        <div class="step-item">
+                            <span class="step-num">Step 2: Set up the Tug-of-War formula</span><br>
+                            ${advanceWorkText}
+                            <div class="math-statement">
+                                F<sub>net</sub> = F<sub>larger</sub> &minus; F<sub>smaller</sub><br>
+                                ${netMag} N = ${sumKnownLarger} N &minus; ${smallerExpression}
+                            </div>
+                        </div>
+
+                        <div class="step-item">
+                            <span class="step-num">Step 3: Solve for ${targetLabel} using the "Seat Swap" (change sides, change signs)</span><br>
+                            Avoid negative numbers by moving ${targetLabel} across the equals sign:
+                            <div class="math-statement">
+                                ${seatSwapStep}
+                            </div>
+                        </div>
+
+                        <div class="step-item">
+                            <span class="step-num">Step 4: State the final vector with direction</span><br>
+                            From the diagram, ${targetLabel} points to the ${targetDir.toLowerCase()}:
+                            <div class="math-statement">
+                                F&#8407;<sub>${k + 1}</sub> = <strong>${expectedValStr} N [${expectedDirStr}]</strong>
+                            </div>
+                        </div>
+
+                        <div style="font-size: 0.88rem; color: #7f8c8d; margin-top: 6px;">
+                            Press <strong>Enter ↵</strong> or click the button above to practice a fresh problem.
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        feedback.innerHTML = walkthroughHTML;
+    }
+
+    /* ==========================================================================
+       PROGRESS BAR & CLIPBOARD EXPORT
+       ========================================================================== */
+    function updateUIProgress() {
+        let displayMastery = highestMasteryPercentage;
+        document.getElementById('mastery-percent').textContent = `${displayMastery}%`;
+        document.getElementById('progress-count').textContent = `${consecutiveCorrect} / ${MASTERY_GOAL}`;
+        document.getElementById('progress-fill').style.width = `${displayMastery}%`;
+    }
+
+    function copyProofToClipboard() {
+        const target = document.getElementById('activity-card');
+        const toast = document.getElementById('toast');
+
+        if (typeof html2canvas === 'undefined') {
+            alert("Clipboard module initializing. Please retry in a moment.");
+            return;
+        }
+
+        html2canvas(target, {
+            scale: 2,
+            backgroundColor: '#ffffff'
+        }).then(canvas => {
+            canvas.toBlob(blob => {
+                if (navigator.clipboard && navigator.clipboard.write) {
+                    const item = new ClipboardItem({ "image/png": blob });
+                    navigator.clipboard.write([item]).then(() => {
+                        toast.style.display = "block";
+                        setTimeout(() => { toast.style.display = "none"; }, 3500);
+                    }).catch(err => {
+                        fallbackDownload(blob);
+                    });
+                } else {
+                    fallbackDownload(blob);
+                }
+            });
+        }).catch(err => {
+            console.error("html2canvas error:", err);
+            alert("Unable to copy directly. Please take a screenshot.");
+        });
+    }
+
+    function fallbackDownload(blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Net-Force-Proof-${sessionUID}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+        const toast = document.getElementById('toast');
+        toast.textContent = "Proof image downloaded! Submit this file to your LMS dropbox.";
+        toast.style.display = "block";
+        setTimeout(() => { toast.style.display = "none"; }, 4000);
     }
 
     window.onload = init;
